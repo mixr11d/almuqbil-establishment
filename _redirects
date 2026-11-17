@@ -1,0 +1,18 @@
+# قواعد التوجيه وإعادة التوجيه (Redirects & Clean URLs) لـ Cloudflare Pages
+
+# 1. توجيه طلبات الصفحات ذات الامتداد .html تلقائياً إلى المسارات النظيفة
+/index.html                           /                                  301
+/about.html                           /about/                            301
+/contact.html                         /contact/                          301
+/services/interior-painting.html       /services/interior-painting/       301
+/services/exterior-painting.html       /services/exterior-painting/       301
+/services/wood-marble-chipboard.html   /services/wood-marble-chipboard/   301
+/services/gypsum-board.html            /services/gypsum-board/            301
+/services/foam-frames.html             /services/foam-frames/             301
+/services/renovation-finishing.html    /services/renovation-finishing/    301
+/services/wallpaper.html               /services/wallpaper/               301
+/services/parquet-spc.html             /services/parquet-spc/             301
+
+# 2. حماية وتوجيه المسار الجذري للخدمات
+/services                             /                                  302
+/services/                            /                                  302
