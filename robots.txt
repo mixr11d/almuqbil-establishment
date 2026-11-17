@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# منع الزحف إلى الواجهات البرمجية والملفات المؤقتة
+Disallow: /api/
+Disallow: /functions/
+
+# خريطة الموقع الرسمية بالدومين المعتمد
+Sitemap: https://almuqbil-establishment.pages.dev/sitemap.xml
