@@ -1,0 +1,23 @@
+{
+  "name": "almuqbil-establishment",
+  "version": "1.0.0",
+  "description": "الموقع الرسمي لمؤسسة العتيق للديكور والدهانات والترميم والتشطيب بالرياض",
+  "main": "scripts/build.js",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "serve": "npx serve dist"
+  },
+  "keywords": [
+    "دهانات بالرياض",
+    "معلم دهانات بالرياض",
+    "ديكورات الرياض",
+    "بديل الخشب",
+    "بديل الرخام",
+    "بديل الشيبورد",
+    "فوم وبانوهات",
+    "ترميم وتشطيب"
+  ],
+  "author": "مؤسسة العتيق",
+  "license": "ISC"
+}
