@@ -1,0 +1,55 @@
+{
+  "business": {
+    "name": "مؤسسة العتيق للديكور والدهانات والترميم والتشطيب",
+    "shortName": "مؤسسة العتيق",
+    "field": "تنفيذ الدهانات والديكورات والترميم والتشطيب",
+    "city": "الرياض",
+    "targetAreas": "جميع أحياء مدينة الرياض (شمال، شرق، غرب، جنوب)",
+    "address": "طريق أبي بكر الصديق، حي التعاون، الرياض 12476، المملكة العربية السعودية",
+    "workingHours": "يوميًا من 7:00 صباحًا إلى 11:30 مساءً",
+    "phone": "0500214364",
+    "phoneInternational": "+966500214364",
+    "phoneTelLink": "tel:+966500214364",
+    "whatsappNumber": "966500214364",
+    "whatsappLink": "https://wa.me/966500214364",
+    "domain": "https://almuqbil-establishment.pages.dev"
+  },
+  "branding": {
+    "logo": "images/logo-muqbil_result.webp",
+    "heroImage": "images/muqbil-homepage-2_result.webp",
+    "colors": {
+      "primary": "#172536",
+      "primaryMedium": "#26394D",
+      "gold": "#C5A46D",
+      "goldLight": "#E0C99D",
+      "background": "#FAF9F6",
+      "surface": "#F1F2F3",
+      "textDark": "#252B32",
+      "textMuted": "#68717C",
+      "border": "#E2E5E8",
+      "white": "#FFFFFF"
+    }
+  },
+  "navigation": [
+    { "title": "الرئيسية", "path": "/" },
+    { "title": "دهانات داخلية", "path": "/services/interior-painting/" },
+    { "title": "دهانات خارجية", "path": "/services/exterior-painting/" },
+    { "title": "بديل الخشب والرخام", "path": "/services/wood-marble-chipboard/" },
+    { "title": "جبس بورد", "path": "/services/gypsum-board/" },
+    { "title": "فوم وبانوهات", "path": "/services/foam-frames/" },
+    { "title": "ترميم وتشطيب", "path": "/services/renovation-finishing/" },
+    { "title": "ورق جدران", "path": "/services/wallpaper/" },
+    { "title": "باركيه وSPC", "path": "/services/parquet-spc/" },
+    { "title": "من نحن", "path": "/about/" },
+    { "title": "اتصل بنا", "path": "/contact/" }
+  ],
+  "features": [
+    "أسعار مناسبة ومخفضة",
+    "تنظيف المكان أثناء العمل",
+    "المحافظة على الأرضيات والأثاث",
+    "معاينة مجانية",
+    "الاهتمام بجودة المواد المستخدمة",
+    "خبرة طويلة في مجال العمل",
+    "خصومات للمشاريع والعملاء الجدد"
+  ]
+}
