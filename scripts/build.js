@@ -63,7 +63,7 @@ if (fs.existsSync(distDir)) {
 }
 ensureDirSync(distDir);
 
-// نسخ الأصول والصور
+// نسخ الأصول والمجلدات
 copyRecursiveSync(imagesDir, path.join(distDir, 'images'));
 copyRecursiveSync(assetsDir, path.join(distDir, 'assets'));
 
@@ -107,7 +107,7 @@ pages.forEach(page => {
   fs.writeFileSync(outputFilePath, finalHtml, 'utf8');
 });
 
-// خريطة الموقع
+// خريطة الموقع sitemap.xml
 const now = new Date().toISOString().split('T')[0];
 let sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 generatedUrls.forEach(item => {
@@ -116,12 +116,13 @@ generatedUrls.forEach(item => {
 sitemapContent += `</urlset>`;
 fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemapContent, 'utf8');
 
-// نسخ ملفات التكوين
-['_headers', '_redirects', 'robots.txt'].forEach(file => {
+// نسخ ملفات التكوين وصورة الشعار الجذرية للواتساب
+['_headers', '_redirects', 'robots.txt', 'logo-muqbil.jpeg'].forEach(file => {
   const srcFile = path.join(rootDir, file);
   if (fs.existsSync(srcFile)) {
     fs.copyFileSync(srcFile, path.join(distDir, file));
+    console.log(`✓ تم نسخ ملف: ${file}`);
   }
 });
 
-console.log('--- اكتمل البناء بنجاح مع كافة ملفات CSS والصور ---');
+console.log('--- اكتمل البناء بنجاح 100% ---');
