@@ -1,5 +1,5 @@
 /**
- * الوظائف التفاعلية العامة لواجهة موقع مؤسسة العتيق
+ * الوظائف التفاعلية العامة لواجهة موقع مؤسسة المقبل
  */
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // 2. سلوك زر الصعود للأعلى (Scroll To Top) الثابت يسار الشاشة
+  // 2. سلوك زر الصعود للأعلى (Scroll To Top)
   const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 
   if (scrollToTopBtn) {
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // 3. إدارة عناصر الأسئلة الشائعة الأكورديون (Accordion FAQ)
+  // 3. إدارة عناصر الأسئلة الشائعة (Accordion FAQ)
   const faqQuestions = document.querySelectorAll('.faq-question');
   faqQuestions.forEach(function (button) {
     button.addEventListener('click', function () {
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // 4. معالجة نموذج التواصل بشكل حقيقي وآمن (عند توفره)
+  // 4. معالجة نموذج التواصل وإطلاق الإحالة الناجحة
   const contactForm = document.getElementById('mainContactForm');
   if (contactForm) {
     contactForm.addEventListener('submit', async function (e) {
@@ -112,7 +112,8 @@ document.addEventListener('DOMContentLoaded', function () {
             formAlert.classList.add('success');
           }
           contactForm.reset();
-          // إطلاق حدث التحويل الفعلي المعتمد لـ Google Ads
+          
+          // إطلاق حدث التحويل الفعلي لقوقل
           if (typeof window.reportFormSuccess === 'function') {
             window.reportFormSuccess('mainContactForm');
           }
@@ -129,4 +130,5 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   }
+
 });
