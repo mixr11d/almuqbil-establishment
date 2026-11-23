@@ -5,13 +5,13 @@
 
 window.ADS_CONFIG = {
   // معرف حساب Google Ads الأساسي (مثال: 'AW-123456789')
-  conversionId: '',
+  conversionId: 'AW-18582533101',
 
   // معرّفات التسميات الخاصة بكل إجراء تحويلي (Conversion Labels)
   labels: {
-    call: '',      // Label تحويل النقر على أرقام الاتصال (click_call)
-    whatsapp: '',  // Label تحويل النقر على روابط واتساب (click_whatsapp)
-    form: ''       // Label تحويل إرسال النموذج بنجاح (form_submit_success)
+    call: 'YDtwCJLilL4dEO3n65xF',      // Label تحويل النقر على أرقام الاتصال (click_call)
+    whatsapp: 'bHMmCJXilL4dEO3n65xF',  // Label تحويل النقر على روابط واتساب (click_whatsapp)
+    form: 'IgyMCLj2lb4dEO3n65xF'       // Label تحويل إرسال النموذج بنجاح (form_submit_success)
   },
 
   // حالة التفعيل (تتحول إلى true تلقائياً بمجرد إدخال conversionId)
