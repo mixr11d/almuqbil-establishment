@@ -15,10 +15,26 @@ const imagesDir = path.join(rootDir, 'images');
 const distDir = path.join(rootDir, 'dist');
 
 const siteConfig = JSON.parse(fs.readFileSync(path.join(dataDir, 'site-config.json'), 'utf8'));
+const baseDomain = String(siteConfig.business.domain || '').replace(/\/+$/, '');
 
 const headerTemplate = fs.readFileSync(path.join(componentsDir, 'header.html'), 'utf8');
 const footerTemplate = fs.readFileSync(path.join(componentsDir, 'footer.html'), 'utf8');
 const floatingButtonsTemplate = fs.readFileSync(path.join(componentsDir, 'floating-buttons.html'), 'utf8');
+
+// قراءة معرّف Google Ads مركزياً من src/assets/js/ads-config.js
+let googleAdsId = '';
+const adsConfigPath = path.join(assetsDir, 'js', 'ads-config.js');
+if (fs.existsSync(adsConfigPath)) {
+  const adsConfigRaw = fs.readFileSync(adsConfigPath, 'utf8');
+  const idMatch = adsConfigRaw.match(/conversionId\s*:\s*['"]([^'"]+)['"]/);
+  if (idMatch && idMatch[1] && idMatch[1].trim().startsWith('AW-')) {
+    googleAdsId = idMatch[1].trim();
+  }
+}
+
+const googleAdsHeadSnippet = googleAdsId
+  ? `<!-- Google tag (gtag.js) - حقن مركزي تلقائي من ads-config.js -->\n  <script async src="https://www.googletagmanager.com/gtag/js?id=${googleAdsId}"></script>\n  <script>\n    window.dataLayer = window.dataLayer || [];\n    function gtag(){dataLayer.push(arguments);}\n    gtag('js', new Date());\n    gtag('config', '${googleAdsId}');\n  </script>`
+  : '';
 
 function ensureDirSync(dir) {
   if (!fs.existsSync(dir)) {
@@ -56,6 +72,10 @@ function getHtmlFiles(dir, baseDir = '') {
   return results;
 }
 
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 console.log('--- بدء البناء ---');
 
 if (fs.existsSync(distDir)) {
@@ -71,7 +91,8 @@ const pages = getHtmlFiles(pagesDir);
 const generatedUrls = [];
 
 pages.forEach(page => {
-  let rawContent = fs.readFileSync(page.fullPath, 'utf8');
+  const rawContent = fs.readFileSync(page.fullPath, 'utf8');
+  const is404 = page.relPath === '404.html';
 
   let routePath = '/' + page.relPath.replace(/\.html$/, '');
   if (routePath.endsWith('/index')) {
@@ -81,22 +102,67 @@ pages.forEach(page => {
   }
   if (routePath === '//') routePath = '/';
 
-  const canonicalUrl = `${siteConfig.business.domain}${routePath}`;
-  generatedUrls.push({ url: canonicalUrl, priority: routePath === '/' ? '1.0' : '0.8' });
+  const canonicalUrl = is404 ? `${baseDomain}/404.html` : `${baseDomain}${routePath}`;
+  if (!is404) {
+    generatedUrls.push({ url: canonicalUrl, priority: routePath === '/' ? '1.0' : '0.8' });
+  }
 
-  let activeHeader = headerTemplate.replace(
-    new RegExp(`(data-path="${routePath}")`, 'g'),
-    `$1 class="active" aria-current="page"`
-  );
+  let activeHeader = headerTemplate;
+  if (!is404) {
+    const linkRegex = new RegExp(`(<[^>]*data-path="${escapeRegExp(routePath)}"[^>]*>)`, 'g');
+    activeHeader = headerTemplate.replace(linkRegex, tag => {
+      let updatedTag = tag;
+      if (/class=["'][^"']*["']/.test(updatedTag)) {
+        updatedTag = updatedTag.replace(/class=(["'])([^"']*)\1/, 'class=$1$2 active$1');
+      } else {
+        updatedTag = updatedTag.replace(/>$/, ' class="active">');
+      }
+      if (!/aria-current=/.test(updatedTag)) {
+        updatedTag = updatedTag.replace(/>$/, ' aria-current="page">');
+      }
+      return updatedTag;
+    });
+  }
 
   let finalHtml = rawContent
-    .replace('<!-- {{HEADER}} -->', activeHeader)
-    .replace('<!-- {{FOOTER}} -->', footerTemplate)
-    .replace('<!-- {{FLOATING_BUTTONS}} -->', floatingButtonsTemplate)
-    .replace('<!-- {{CANONICAL_URL}} -->', canonicalUrl);
+    .replaceAll('<!-- {{HEADER}} -->', activeHeader)
+    .replaceAll('<!-- {{FOOTER}} -->', footerTemplate)
+    .replaceAll('<!-- {{FLOATING_BUTTONS}} -->', floatingButtonsTemplate)
+    .replaceAll('<!-- {{CANONICAL_URL}} -->', canonicalUrl);
+
+  // إزالة أي كود Google Ads (gtag.js) مكتوب يدوياً داخل الصفحة لمنع التكرار أو بقاء معرّف قديم
+  finalHtml = finalHtml
+    .replace(/<!--\s*Google tag \(gtag\.js\)[^>]*-->\s*/gi, '')
+    .replace(/<script[^>]*src=["']https?:\/\/www\.googletagmanager\.com\/gtag\/js[^"']*["'][^>]*><\/script>\s*/gi, '')
+    .replace(/<script>\s*window\.dataLayer\s*=\s*window\.dataLayer[\s\S]*?gtag\(\s*['"]config['"][\s\S]*?<\/script>\s*/gi, '');
+
+  // حقن كود Google Ads الموحد في <head> تلقائياً
+  if (finalHtml.includes('<!-- {{GOOGLE_ADS_HEAD}} -->')) {
+    finalHtml = finalHtml.replaceAll('<!-- {{GOOGLE_ADS_HEAD}} -->', googleAdsHeadSnippet);
+  } else if (googleAdsHeadSnippet && finalHtml.includes('</head>')) {
+    finalHtml = finalHtml.replace('</head>', `  ${googleAdsHeadSnippet}\n</head>`);
+  }
+
+  // توحيد استدعاء ملفات التتبع والتفاعل قبل </body> ومنع تكرارها في جميع الصفحات
+  finalHtml = finalHtml
+    .replace(/<script[^>]*src=["']\/assets\/js\/ads-config\.js["'][^>]*><\/script>\s*/gi, '')
+    .replace(/<script[^>]*src=["']\/assets\/js\/tracking\.js["'][^>]*><\/script>\s*/gi, '')
+    .replace(/<script[^>]*src=["']\/assets\/js\/site\.js["'][^>]*><\/script>\s*/gi, '');
+
+  const coreScripts = [
+    '<script src="/assets/js/ads-config.js"></script>',
+    '<script src="/assets/js/tracking.js"></script>',
+    '<script src="/assets/js/site.js"></script>'
+  ].join('\n  ');
+
+  if (finalHtml.includes('</body>')) {
+    finalHtml = finalHtml.replace('</body>', `  ${coreScripts}\n</body>`);
+  }
 
   let outputFilePath;
-  if (routePath === '/') {
+  if (is404) {
+    outputFilePath = path.join(distDir, '404.html');
+  } else if (routePath === '/') {
     outputFilePath = path.join(distDir, 'index.html');
   } else {
     const subDir = path.join(distDir, routePath.replace(/^\//, '').replace(/\/$/, ''));
