@@ -6,73 +6,108 @@
 (function () {
   'use strict';
 
-  // 1. التحقق من وجود ملف الإعدادات المركزي
+  // 1. التحقق من وجود ملف الإعدادات المركزي وصلاحية المعرّف
   if (!window.ADS_CONFIG || !window.ADS_CONFIG.isEnabled) {
     return;
   }
 
-  const G_ID = window.ADS_CONFIG.conversionId;
+  const G_ID = String(window.ADS_CONFIG.conversionId || '').trim();
+  if (!G_ID.startsWith('AW-')) {
+    return;
+  }
 
-  // 2. تهيئة dataLayer و دالة gtag المركزية
+  // 2. تهيئة dataLayer و دالة gtag دون الكتابة فوق التهيئة السابقة إن وجدت
   window.dataLayer = window.dataLayer || [];
-  window.gtag = window.gtag || function () {
-    window.dataLayer.push(arguments);
-  };
+  if (typeof window.gtag !== 'function') {
+    window.gtag = function () {
+      window.dataLayer.push(arguments);
+    };
+  }
 
-  window.gtag('js', new Date());
-  window.gtag('config', G_ID);
+  // 3. حقن سكربت قوقل فقط إذا لم يكن محقوناً مسبقاً في <head> لمنع التكرار
+  const existingGtagScript = document.querySelector('script[src*="googletagmanager.com/gtag/js"]');
+  if (!existingGtagScript) {
+    window.gtag('js', new Date());
+    window.gtag('config', G_ID);
 
-  // 3. حقن سكربت قوقل الرسمي تلقائياً في هيدر أي صفحة تفتح
-  const script = document.createElement('script');
-  script.async = true;
-  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(G_ID)}`;
-  (document.head || document.documentElement).appendChild(script);
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(G_ID);
+    (document.head || document.documentElement).appendChild(script);
+  }
 
-  // 4. منع تكرار التحويل المزدوج السريع
+  // 4. منع تكرار التحويل المزدوج السريع على الجوال (Cooldown 2s)
   const firedEvents = new Set();
 
   function sendConversion(labelKey) {
-    const label = window.ADS_CONFIG.labels[labelKey];
-    if (!label) return;
+    const labels = window.ADS_CONFIG.labels || {};
+    const rawLabel = labels[labelKey];
+    if (!rawLabel || !String(rawLabel).trim()) return;
 
-    const signature = `${labelKey}_${label}`;
+    const cleanLabel = String(rawLabel).trim();
+    const signature = `${labelKey}_${cleanLabel}`;
     if (firedEvents.has(signature)) return;
-    firedEvents.add(signature);
-    setTimeout(() => firedEvents.delete(signature), 2000);
 
-    // إرسال الإحالة فقط (وقوقل سيطبق القيمة والعملة المحددة في حسابك تلقائياً)
+    firedEvents.add(signature);
+    setTimeout(function () {
+      firedEvents.delete(signature);
+    }, 2000);
+
+    // إرسال الإحالة عبر beacon لضمان وصولها لجوجل قبل مغادرة المتصفح لتطبيق الاتصال أو الواتساب
     window.gtag('event', 'conversion', {
-      send_to: `${G_ID}/${label}`
+      send_to: `${G_ID}/${cleanLabel}`,
+      transport_type: 'beacon'
     });
   }
 
-  // 5. مراقبة ونقر جميع روابط الموقع تلقائياً (اتصال + واتساب)
+  // 5. مراقبة نقر جميع روابط الموقع تلقائياً (اتصال + واتساب)
   document.addEventListener('click', function (e) {
+    if (!e.target || typeof e.target.closest !== 'function') return;
     const link = e.target.closest('a');
     if (!link) return;
 
-    // استثناء أرقام المطور
-    const href = link.getAttribute('href') || link.href || '';
-    if (href.includes('966578539687') || href.includes('0578539687') || link.hasAttribute('data-no-track')) {
+    // استثناء المطور الصارم
+    if (
+      link.getAttribute('data-no-track') === 'true' ||
+      link.hasAttribute('data-no-track') ||
+      link.closest('[data-no-track="true"]')
+    ) {
+      return;
+    }
+
+    const rawHref = (link.getAttribute('href') || link.href || '').trim();
+    if (!rawHref) return;
+
+    const lowerHref = rawHref.toLowerCase();
+    const cleanDigits = rawHref.replace(/\D/g, '');
+
+    // استثناء أرقام المطور حتى لو كُتبت بمسافات أو رموز
+    if (cleanDigits.includes('966578539687') || cleanDigits.includes('0578539687')) {
       return;
     }
 
     // تتبع أي اتصال في أي صفحة
-    if (href.startsWith('tel:')) {
+    if (lowerHref.startsWith('tel:')) {
       sendConversion('call');
       return;
     }
 
     // تتبع أي واتساب في أي صفحة
-    if (href.includes('wa.me') || href.includes('whatsapp.com')) {
+    if (
+      lowerHref.includes('wa.me') ||
+      lowerHref.includes('api.whatsapp.com') ||
+      lowerHref.includes('whatsapp.com/send') ||
+      lowerHref.startsWith('whatsapp://')
+    ) {
       sendConversion('whatsapp');
       return;
     }
-  }, true);
+  }, { capture: true, passive: true });
 
   // 6. واجهة تتبع إرسال النموذج بنجاح
   window.reportFormSuccess = function () {
     sendConversion('form');
   };
+  window.trackGoogleConversion = sendConversion;
 
 })();
