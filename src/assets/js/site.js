@@ -169,10 +169,16 @@ document.addEventListener('DOMContentLoaded', function () {
       form.reset();
       if (submitBtn) submitBtn.disabled = false;
 
-      // فتح الواتساب بشكل متزامن مع دعم متصفحات الجوال التي تحظر النوافذ المنبثقة
-      const win = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-      if (!win || win.closed) {
-        window.location.href = whatsappUrl;
+      // فتح الواتساب في تبويب واحد فقط وإبقاء صفحة النموذج مفتوحة لإتمام إرسال الإحالة
+      const win = window.open(whatsappUrl, '_blank');
+      if (win) {
+        try {
+          win.opener = null;
+        } catch (err) {}
+      } else {
+        setTimeout(function () {
+          window.location.href = whatsappUrl;
+        }, 250);
       }
     });
   });
