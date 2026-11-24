@@ -16,6 +16,7 @@ const distDir = path.join(rootDir, 'dist');
 
 const siteConfig = JSON.parse(fs.readFileSync(path.join(dataDir, 'site-config.json'), 'utf8'));
 const baseDomain = String(siteConfig.business.domain || '').replace(/\/+$/, '');
+const buildVersion = Date.now();
 
 const headerTemplate = fs.readFileSync(path.join(componentsDir, 'header.html'), 'utf8');
 const footerTemplate = fs.readFileSync(path.join(componentsDir, 'footer.html'), 'utf8');
@@ -143,16 +144,16 @@ pages.forEach(page => {
     finalHtml = finalHtml.replace('</head>', `  ${googleAdsHeadSnippet}\n</head>`);
   }
 
-  // توحيد استدعاء ملفات التتبع والتفاعل قبل </body> ومنع تكرارها في جميع الصفحات
+  // توحيد استدعاء ملفات التتبع والتفاعل مع كسر الكاش التلقائي (?v=) ومنع تكرارها
   finalHtml = finalHtml
-    .replace(/<script[^>]*src=["']\/assets\/js\/ads-config\.js["'][^>]*><\/script>\s*/gi, '')
-    .replace(/<script[^>]*src=["']\/assets\/js\/tracking\.js["'][^>]*><\/script>\s*/gi, '')
-    .replace(/<script[^>]*src=["']\/assets\/js\/site\.js["'][^>]*><\/script>\s*/gi, '');
+    .replace(/<script[^>]*src=["']\/assets\/js\/ads-config\.js(\?[^"']*)?["'][^>]*><\/script>\s*/gi, '')
+    .replace(/<script[^>]*src=["']\/assets\/js\/tracking\.js(\?[^"']*)?["'][^>]*><\/script>\s*/gi, '')
+    .replace(/<script[^>]*src=["']\/assets\/js\/site\.js(\?[^"']*)?["'][^>]*><\/script>\s*/gi, '');
 
   const coreScripts = [
-    '<script src="/assets/js/ads-config.js"></script>',
-    '<script src="/assets/js/tracking.js"></script>',
-    '<script src="/assets/js/site.js"></script>'
+    `<script src="/assets/js/ads-config.js?v=${buildVersion}"></script>`,
+    `<script src="/assets/js/tracking.js?v=${buildVersion}"></script>`,
+    `<script src="/assets/js/site.js?v=${buildVersion}"></script>`
   ].join('\n  ');
 
   if (finalHtml.includes('</body>')) {
