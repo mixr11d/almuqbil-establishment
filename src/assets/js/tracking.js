@@ -1,92 +1,78 @@
 /**
- * محرك تتبع التحويلات المركزي الموحد - مؤسسة المقبل
- * متوافق 100% مع Google Ads و Google Tag Assistant
+ * محرك تتبع التحويلات المركزي الشامل - مؤسسة المقبل
+ * يعتمد كلياً على القيم والعملات المحددة داخل حساب إعلانات Google Ads
  */
 
 (function () {
   'use strict';
 
-  // 1. تهيئة dataLayer و gtag على النطاق العام للنافذة
+  // 1. التحقق من وجود ملف الإعدادات المركزي
+  if (!window.ADS_CONFIG || !window.ADS_CONFIG.isEnabled) {
+    return;
+  }
+
+  const G_ID = window.ADS_CONFIG.conversionId;
+
+  // 2. تهيئة dataLayer و دالة gtag المركزية
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || function () {
     window.dataLayer.push(arguments);
   };
 
-  // 2. تحميل مكتبة Google Tag إذا تم توفير معرّف الإعلانات الصحيح
-  if (window.ADS_CONFIG && window.ADS_CONFIG.isEnabled) {
-    const gtagScript = document.createElement('script');
-    gtagScript.async = true;
-    gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(window.ADS_CONFIG.conversionId)}`;
-    document.head.appendChild(gtagScript);
+  window.gtag('js', new Date());
+  window.gtag('config', G_ID);
 
-    window.gtag('js', new Date());
-    window.gtag('config', window.ADS_CONFIG.conversionId);
-  }
+  // 3. حقن سكربت قوقل الرسمي تلقائياً في هيدر أي صفحة تفتح
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(G_ID)}`;
+  (document.head || document.documentElement).appendChild(script);
 
-  // 3. ذاكرة مؤقتة لمنع تكرار التحويل المزدوج اللحظي
+  // 4. منع تكرار التحويل المزدوج السريع
   const firedEvents = new Set();
 
-  function trackConversion(eventName, labelKey, eventValue) {
-    const now = Date.now();
-    const eventSignature = `${eventName}_${labelKey}`;
+  function sendConversion(labelKey) {
+    const label = window.ADS_CONFIG.labels[labelKey];
+    if (!label) return;
 
-    if (firedEvents.has(eventSignature)) return;
-    firedEvents.add(eventSignature);
-    setTimeout(() => firedEvents.delete(eventSignature), 1500);
+    const signature = `${labelKey}_${label}`;
+    if (firedEvents.has(signature)) return;
+    firedEvents.add(signature);
+    setTimeout(() => firedEvents.delete(signature), 2000);
 
-    // تسجيل في dataLayer
-    window.dataLayer.push({
-      event: eventName,
-      conversion_type: labelKey,
-      timestamp: now
+    // إرسال الإحالة فقط (وقوقل سيطبق القيمة والعملة المحددة في حسابك تلقائياً)
+    window.gtag('event', 'conversion', {
+      send_to: `${G_ID}/${label}`
     });
-
-    // إرسال الإحالة الناجحة إلى Google Ads
-    if (window.ADS_CONFIG && window.ADS_CONFIG.isEnabled) {
-      const label = window.ADS_CONFIG.labels[labelKey];
-      if (label) {
-        window.gtag('event', 'conversion', {
-          send_to: `${window.ADS_CONFIG.conversionId}/${label}`,
-          value: eventValue || 100.0,
-          currency: 'SAR'
-        });
-      }
-    }
   }
 
-  // 4. رصد النقرات المركزي الموحد
+  // 5. مراقبة ونقر جميع روابط الموقع تلقائياً (اتصال + واتساب)
   document.addEventListener('click', function (e) {
-    const targetLink = e.target.closest('a');
-    if (!targetLink) return;
+    const link = e.target.closest('a');
+    if (!link) return;
 
-    // استثناء روابط المطور
-    if (
-      targetLink.hasAttribute('data-no-track') ||
-      targetLink.closest('[data-no-track="true"]') ||
-      targetLink.href.includes('966578539687') ||
-      targetLink.href.includes('0578539687')
-    ) {
+    // استثناء أرقام المطور
+    const href = link.getAttribute('href') || link.href || '';
+    if (href.includes('966578539687') || href.includes('0578539687') || link.hasAttribute('data-no-track')) {
       return;
     }
 
-    const href = targetLink.getAttribute('href') || targetLink.href || '';
-
-    // أ. رصد نقرات الاتصال الهاتفي
+    // تتبع أي اتصال في أي صفحة
     if (href.startsWith('tel:')) {
-      trackConversion('click_call', 'call', 100.0);
+      sendConversion('call');
       return;
     }
 
-    // ب. رصد نقرات الواتساب
-    if (href.includes('wa.me') || href.includes('api.whatsapp.com') || href.includes('whatsapp.com')) {
-      trackConversion('click_whatsapp', 'whatsapp', 80.0);
+    // تتبع أي واتساب في أي صفحة
+    if (href.includes('wa.me') || href.includes('whatsapp.com')) {
+      sendConversion('whatsapp');
       return;
     }
   }, true);
 
-  // 5. واجهة تبليغ نجاح النموذج الفعلي
-  window.reportFormSuccess = function (formId) {
-    trackConversion('form_submit_success', 'form', 120.0);
+  // 6. واجهة تتبع إرسال النموذج بنجاح
+  window.reportFormSuccess = function () {
+    sendConversion('form');
   };
 
 })();
